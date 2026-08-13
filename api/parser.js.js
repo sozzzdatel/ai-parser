@@ -1,7 +1,7 @@
 const { google } = require('googleapis');
 const Anthropic = require('@anthropic-ai/sdk');
 
-const CLAUDE_API_KEY = "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";
+const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY;
 const SHEET_ID = "1HwnbSNAFFeX3C4xMjM4TYTH1EEBAWiJl5VAkg_DUHNY";
 
 const KEYWORDS = [
