@@ -1,0 +1,19 @@
+{
+  "name": "ai-parser-agent",
+  "version": "1.0.0",
+  "description": "Автоматический парсер креаторов и статейщиков",
+  "main": "api/parser.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'No build required'",
+    "start": "node api/parser.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.20.0",
+    "googleapis": "^140.0.0",
+    "node-cron": "^3.0.2"
+  },
+  "engines": {
+    "node": "18.x"
+  }
+}
