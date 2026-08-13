@@ -1,0 +1,8 @@
+{
+  "functions": {
+    "api/parser.js": {
+      "memory": 1024,
+      "maxDuration": 300
+    }
+  }
+}
