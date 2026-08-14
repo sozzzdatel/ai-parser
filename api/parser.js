@@ -1,22 +1,17 @@
 const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbx3i8FludvcS7c0v-wIdr9Q8HlcN1LoPp1Grqd7xT9qA0cal0zfQz-fSMi17JPaQ-llNA/exec";
 
-// Ленты площадок. Чтобы добавить новую — впиши URL RSS в этот список.
+// Группа 1 (быстрые проверенные ленты). Добавляй сюда новые надёжные RSS.
 const RSS_FEEDS = [
-  "https://vc.ru/rss/all",
-  "https://dtf.ru/rss/all",
   "https://habr.com/ru/rss/articles/?fl=ru",
-  "https://tproger.ru/feed",
-  "https://lifehacker.ru/feed",
-  "https://www.klerk.ru/export/articles.rss"
+  "https://dtf.ru/rss/all",
+  "https://tproger.ru/feed"
 ];
 
-// Максимум свежих статей, которые берём из каждой ленты за один прогон.
-const MAX_PER_FEED = 40;
+const MAX_PER_FEED = 10;
 
-// Ключевые слова. Дополняй список — просто дописывай через запятую новые "слова".
+// Ключевые слова. Дополняй список — дописывай через запятую новые "слова".
 const KEYWORDS = ["нейросет","нейронн","нейронка","chatgpt","gpt","claude","gemini","midjourney","flux","генерация изображен","генерация видео","sora","kling","veo","runway","seedance","промт","промпт","deepseek","grok","nano banana","нано банан","stable diffusion","suno","elevenlabs","heygen","генеративн","искусственн интеллект","искусственного интеллект","машинное обучен","machine learning","deep learning","llm","языкова модель","языковая модель","copilot","cursor","ollama","llama","mistral","qwen","perplexity","распознавание речи","компьютерное зрение","датасет","обучение модел","gpt-","ии-","ии для","нлп","чат-бот","чатбот","ассистент","разработ","программирован","python","javascript","typescript","react","backend","frontend","devops","фреймворк","база данных","алгоритм","open source","опенсорс","автоматизац","edtech","онлайн-курс","онлайн-образован","обучение нейросет","vibe coding","вайб-кодинг"];
 
-// Кого исключаем (свои бренды/редакции). Дополняй при необходимости.
 const EXCLUDE = ["edugram","study24","studyai","kampus","avtor24","mystylus","studybay","редакция","editorial"];
 
 function matchesKeyword(text){ const t=(text||"").toLowerCase(); return KEYWORDS.some(k=>t.includes(k)); }
@@ -59,12 +54,12 @@ async function runParser(){
   const feedsDone=[];
   for(const feedUrl of RSS_FEEDS){
     let xml;
-    try{ xml=await fetchWithTimeout(feedUrl, 4000); }
+    try{ xml=await fetchWithTimeout(feedUrl, 3500); }
     catch(e){ feedsDone.push(feedUrl+" => ERR"); continue; }
     let items=parseItems(xml);
     const total=items.length;
     items=items.slice(0, MAX_PER_FEED);
-    feedsDone.push(feedUrl+" => "+total+" статей");
+    feedsDone.push(feedUrl+" => "+total);
     for(const item of items){
       const hay=item.title+" "+item.description+" "+item.author;
       if(!matchesKeyword(hay)){ skipped++; continue; }
