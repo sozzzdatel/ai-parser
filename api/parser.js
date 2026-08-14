@@ -7,10 +7,11 @@ const RSS_FEEDS = [
   "https://habr.com/ru/rss/articles/?fl=ru",
   "https://tproger.ru/feed",
   "https://lifehacker.ru/feed",
-  "https://sostav.ru/rss",
-  "https://www.klerk.ru/rss/",
-  "https://timeweb.com/ru/community/feed"
+  "https://www.klerk.ru/export/articles.rss"
 ];
+
+// Максимум свежих статей, которые берём из каждой ленты за один прогон.
+const MAX_PER_FEED = 40;
 
 // Ключевые слова. Дополняй список — просто дописывай через запятую новые "слова".
 const KEYWORDS = ["нейросет","нейронн","нейронка","chatgpt","gpt","claude","gemini","midjourney","flux","генерация изображен","генерация видео","sora","kling","veo","runway","seedance","промт","промпт","deepseek","grok","nano banana","нано банан","stable diffusion","suno","elevenlabs","heygen","генеративн","искусственн интеллект","искусственного интеллект","машинное обучен","machine learning","deep learning","llm","языкова модель","языковая модель","copilot","cursor","ollama","llama","mistral","qwen","perplexity","распознавание речи","компьютерное зрение","датасет","обучение модел","gpt-","ии-","ии для","нлп","чат-бот","чатбот","ассистент","разработ","программирован","python","javascript","typescript","react","backend","frontend","devops","фреймворк","база данных","алгоритм","open source","опенсорс","автоматизац","edtech","онлайн-курс","онлайн-образован","обучение нейросет","vibe coding","вайб-кодинг"];
@@ -58,17 +59,18 @@ async function runParser(){
   const feedsDone=[];
   for(const feedUrl of RSS_FEEDS){
     let xml;
-    try{ xml=await fetchWithTimeout(feedUrl, 6000); }
-    catch(e){ feedsDone.push(feedUrl+":ERR"); continue; }
-    const items=parseItems(xml);
-    feedsDone.push(feedUrl+":"+items.length);
+    try{ xml=await fetchWithTimeout(feedUrl, 4000); }
+    catch(e){ feedsDone.push(feedUrl+" => ERR"); continue; }
+    let items=parseItems(xml);
+    const total=items.length;
+    items=items.slice(0, MAX_PER_FEED);
+    feedsDone.push(feedUrl+" => "+total+" статей");
     for(const item of items){
       const hay=item.title+" "+item.description+" "+item.author;
       if(!matchesKeyword(hay)){ skipped++; continue; }
       if(isExcluded(hay)){ excluded++; continue; }
       if(!item.author){ noauthor++; continue; }
       if(await sendToSheets(item)) added++;
-      await new Promise(r=>setTimeout(r,120));
     }
   }
   return { added, skipped, excluded, noauthor, feedsDone };
@@ -77,7 +79,7 @@ async function runParser(){
 module.exports=async(req,res)=>{
   try{
     const result=await runParser();
-    res.status(200).json({ success:true, message:"Добавлено авторов: "+result.added+" | не по теме: "+result.skipped+" | конкурентов исключено: "+result.excluded+" | без автора: "+result.noauthor, result });
+    res.status(200).json({ success:true, message:"Добавлено авторов: "+result.added, result });
   }catch(error){
     res.status(500).json({ success:false, error:error.message });
   }
