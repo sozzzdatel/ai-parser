@@ -1,12 +1,21 @@
 const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbx3i8FludvcS7c0v-wIdr9Q8HlcN1LoPp1Grqd7xT9qA0cal0zfQz-fSMi17JPaQ-llNA/exec";
 
+// Ленты площадок. Чтобы добавить новую — впиши URL RSS в этот список.
 const RSS_FEEDS = [
   "https://vc.ru/rss/all",
-  "https://habr.com/ru/rss/articles/?fl=ru"
+  "https://dtf.ru/rss/all",
+  "https://habr.com/ru/rss/articles/?fl=ru",
+  "https://tproger.ru/feed",
+  "https://lifehacker.ru/feed",
+  "https://sostav.ru/rss",
+  "https://www.klerk.ru/rss/",
+  "https://timeweb.com/ru/community/feed"
 ];
 
-const KEYWORDS = ["нейросет","нейронн","chatgpt","gpt","claude","gemini","midjourney","flux","генерация изображен","генерация видео","sora","kling","veo","runway","seedance","промт","промпт","ии для","ai для","deepseek","grok","nano banana","нано банан","stable diffusion","suno","elevenlabs","heygen","генеративн","искусственн интеллект","искусственного интеллект"];
+// Ключевые слова. Дополняй список — просто дописывай через запятую новые "слова".
+const KEYWORDS = ["нейросет","нейронн","нейронка","chatgpt","gpt","claude","gemini","midjourney","flux","генерация изображен","генерация видео","sora","kling","veo","runway","seedance","промт","промпт","deepseek","grok","nano banana","нано банан","stable diffusion","suno","elevenlabs","heygen","генеративн","искусственн интеллект","искусственного интеллект","машинное обучен","machine learning","deep learning","llm","языкова модель","языковая модель","copilot","cursor","ollama","llama","mistral","qwen","perplexity","распознавание речи","компьютерное зрение","датасет","обучение модел","gpt-","ии-","ии для","нлп","чат-бот","чатбот","ассистент","разработ","программирован","python","javascript","typescript","react","backend","frontend","devops","фреймворк","база данных","алгоритм","open source","опенсорс","автоматизац","edtech","онлайн-курс","онлайн-образован","обучение нейросет","vibe coding","вайб-кодинг"];
 
+// Кого исключаем (свои бренды/редакции). Дополняй при необходимости.
 const EXCLUDE = ["edugram","study24","studyai","kampus","avtor24","mystylus","studybay","редакция","editorial"];
 
 function matchesKeyword(text){ const t=(text||"").toLowerCase(); return KEYWORDS.some(k=>t.includes(k)); }
@@ -28,6 +37,15 @@ function parseItems(xml){
   return items;
 }
 
+async function fetchWithTimeout(url, ms){
+  const c=new AbortController();
+  const t=setTimeout(()=>c.abort(), ms);
+  try{
+    const r=await fetch(url,{ signal:c.signal, headers:{"User-Agent":"Mozilla/5.0 (compatible; RSSReader/1.0)"} });
+    return await r.text();
+  } finally { clearTimeout(t); }
+}
+
 async function sendToSheets(a){
   try{
     await fetch(WEBHOOK_URL,{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ url:a.link, contact:a.author||"", niche:"нейросети", reach:"", status:"новая", comment:a.title }) });
@@ -37,29 +55,29 @@ async function sendToSheets(a){
 
 async function runParser(){
   let added=0, skipped=0, excluded=0, noauthor=0;
+  const feedsDone=[];
   for(const feedUrl of RSS_FEEDS){
     let xml;
-    try{
-      const resp=await fetch(feedUrl,{ headers:{"User-Agent":"Mozilla/5.0 (compatible; RSSReader/1.0)"} });
-      xml=await resp.text();
-    }catch(e){ continue; }
+    try{ xml=await fetchWithTimeout(feedUrl, 6000); }
+    catch(e){ feedsDone.push(feedUrl+":ERR"); continue; }
     const items=parseItems(xml);
+    feedsDone.push(feedUrl+":"+items.length);
     for(const item of items){
       const hay=item.title+" "+item.description+" "+item.author;
       if(!matchesKeyword(hay)){ skipped++; continue; }
       if(isExcluded(hay)){ excluded++; continue; }
       if(!item.author){ noauthor++; continue; }
       if(await sendToSheets(item)) added++;
-      await new Promise(r=>setTimeout(r,300));
+      await new Promise(r=>setTimeout(r,120));
     }
   }
-  return { added, skipped, excluded, noauthor };
+  return { added, skipped, excluded, noauthor, feedsDone };
 }
 
 module.exports=async(req,res)=>{
   try{
     const result=await runParser();
-    res.status(200).json({ success:true, message:"Добавлено авторов: "+result.added+" | не по теме: "+result.skipped+" | конкурентов исключено: "+result.excluded+" | без автора пропущено: "+result.noauthor, result });
+    res.status(200).json({ success:true, message:"Добавлено авторов: "+result.added+" | не по теме: "+result.skipped+" | конкурентов исключено: "+result.excluded+" | без автора: "+result.noauthor, result });
   }catch(error){
     res.status(500).json({ success:false, error:error.message });
   }
