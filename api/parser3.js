@@ -3,9 +3,9 @@ const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbx3i8FludvcS7c0v-wI
 // Группа 3 (новые площадки: adpass, directline, dsgners, kod). Отдельный endpoint.
 const RSS_FEEDS = [
   "https://adpass.ru/feed/",
-  "https://www.directline.pro/feed/",
-  "https://dsgners.ru/feed/",
-  "https://kod.ru/feed"
+  "https://www.directline.pro/connect/topic/nejroseti/rss",
+  "https://www.directline.pro/connect/topic/nejroseti/feed",
+  "https://www.directline.pro/connect/rss"
 ];
 
 const MAX_PER_FEED = 10;
