@@ -41,8 +41,9 @@ async function fetchWithTimeout(url, ms){
 
 async function sendToSheets(a){
   try{
-    await fetch(WEBHOOK_URL,{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ url:a.link, contact:a.author||"", niche:"нейросети", reach:"", status:"новая", comment:a.title }) });
-    return true;
+    const r = await fetch(WEBHOOK_URL,{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ url:a.link, contact:a.author||"", niche:"нейросети", reach:"", status:"новая", comment:a.title }) });
+    const t = await r.text();
+    return t.trim() === "OK";
   }catch(e){ return false; }
 }
 
